@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYD051 - Isolation Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Amazon Ember', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #f2f3f3;
+            color: #16191f;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: #232f3e;
+            color: white;
+            padding: 1.2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            border-bottom: 3px solid #ff9900;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .header::before {
+            content: '';
+            display: inline-block;
+            background: url('https://d1.awsstatic.com/logos/aws-logo-lockups/poweredbyaws/PB_AWS_logo_RGB_stacked_REV_SQ.91cd4af40773cbfbd15577a3c2b8a346fe3e8fa2.png') no-repeat;
+            background-size: contain;
+            width: 120px;
+            height: 72px;
+            margin-right: 25px;
+            vertical-align: middle;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 992px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+        }
+
+        .floor-plan-container {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #d5dbdb;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .floor-plan-container:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .floor-plan-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .legend-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #d5dbdb;
+            padding: 1.5rem;
+            width: 350px;
+            max-height: 600px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .legend-container:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .legend-title {
+            font-size: 1.2rem;
+            color: #16191f;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #eaeded;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .legend-title::before {
+            content: '';
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff9900"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>');
+            background-size: contain;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            padding: 0.8rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .legend-item:hover {
+            background-color: #f7f9fa;
+            transform: scale(1.03);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #d5dbdb;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            margin-right: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .legend-item:hover .legend-color {
+            transform: scale(1.2);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .generator-color {
+            background-color: #ff9900;
+            border: 1px solid #e88b01;
+        }
+
+        .data-hall-color {
+            background-color: #1d8102;
+            border: 1px solid #186e01;
+        }
+
+        .electrical-color {
+            background-color: #0073bb;
+            border: 1px solid #0065a4;
+        }
+        
+        .hv-color {
+            background-color: #d13212;
+            border: 1px solid #b82b10;
+        }
+        
+        .battery-color {
+            background-color: #7d0c82;
+            border: 1px solid #690a6e;
+        }
+        
+        .busduct-color {
+            background-color: #0d6a30;
+            border: 1px solid #0a5526;
+        }
+        
+        .valve-color {
+            background-color: #c77c0e;
+            border: 1px solid #b06c0c;
+        }
+        
+        .fire-color {
+            background-color: #cf1f1f;
+            border: 1px solid #b71b1b;
+        }
+        
+        .iw-color {
+            background-color: #2e73b8;
+            border: 1px solid #2862a0;
+        }
+
+        .legend-text {
+            font-size: 0.95rem;
+            color: #16191f;
+            transition: all 0.3s ease;
+            font-weight: 400;
+        }
+        
+        .legend-item:hover .legend-text {
+            color: #0073bb;
+            font-weight: 500;
+        }
+
+        .legend-section {
+            margin-bottom: 1.2rem;
+        }
+
+        .legend-section-title {
+            font-size: 1rem;
+            color: #545b64;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .info-panel {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #d5dbdb;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from {opacity: 0}
+            to {opacity: 1}
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #d5dbdb;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 700px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eaeded;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #16191f;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+        
+        .modal-header::before {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17v-2h2v2h-2zm2-3h-2V7h2v9z"/></svg>');
+        }
+        
+        #generatorModal .modal-header::before {
+            background-color: #ff9900;
+        }
+        
+        #electricalModal .modal-header::before {
+            background-color: #0073bb;
+        }
+        
+        #hvModal .modal-header::before {
+            background-color: #d13212;
+        }
+        
+        #batteryModal .modal-header::before {
+            background-color: #7d0c82;
+        }
+        
+        #busductModal .modal-header::before {
+            background-color: #0d6a30;
+        }
+        
+        #valveModal .modal-header::before {
+            background-color: #c77c0e;
+        }
+        
+        #fireModal .modal-header::before {
+            background-color: #cf1f1f;
+        }
+        
+        #iwModal .modal-header::before {
+            background-color: #2e73b8;
+        }
+        
+        .close {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            color: #545b64;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .close:hover {
+            color: #16191f;
+        }
+        
+        .link-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .link-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #eaeded;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .link-item:hover {
+            background-color: #f7f9fa;
+            border-color: #d5dbdb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transform: translateY(-2px);
+        }
+        
+        .link-item::before {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 12px;
+            background-color: #0073bb;
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>');
+            mask-size: contain;
+            mask-repeat: no-repeat;
+        }
+        
+        .link-item a {
+            color: #0073bb;
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: block;
+            width: 100%;
+        }
+        
+        .link-item a:hover {
+            text-decoration: underline;
+        }
+
+        .info-panel h3 {
+            color: #16191f;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .info-panel p {
+            color: #545b64;
+            font-size: 0.95rem;
+        }
+
+        .aws-logo {
+            height: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #16191f;
+            font-size: 1.1rem;
+            z-index: 5;
+            text-align: center;
+        }
+        
+        /* Location dot styles */
+        .location-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: currentColor;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.7), 0 0 0 8px rgba(0, 0, 0, 0.1);
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: none;
+            animation: pulse 1.5s infinite;
+            cursor: pointer;
+        }
+        
+        .location-dot:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.8), 0 0 0 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .location-dot.glow {
+            box-shadow: 0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor, 0 0 0 4px rgba(255, 255, 255, 0.7);
+            animation: glow-pulse 1.5s infinite;
+        }
+        
+        @keyframes glow-pulse {
+            0% { 
+                transform: translate(-50%, -50%) scale(0.9);
+                box-shadow: 0 0 15px currentColor, 0 0 30px currentColor, 0 0 45px currentColor, 0 0 0 4px rgba(255, 255, 255, 0.7);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.1);
+                box-shadow: 0 0 25px currentColor, 0 0 50px currentColor, 0 0 75px currentColor, 0 0 0 6px rgba(255, 255, 255, 0.9);
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(0.9);
+                box-shadow: 0 0 15px currentColor, 0 0 30px currentColor, 0 0 45px currentColor, 0 0 0 4px rgba(255, 255, 255, 0.7);
+            }
+        }
+        
+        /* Hover zones */
+        .hover-zone {
+            position: absolute;
+            z-index: 5;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .hover-zone.generator-zone,
+        .hover-zone.data-hall-zone {
+            width: 60px;
+            height: 60px;
+        }
+        
+
+        
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #eaeded;
+            border-top: 4px solid #ff9900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .author-credit {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 0.85rem;
+            color: #545b64;
+            z-index: 20;
+        }
+        
+        .author-credit a {
+            color: #ff9900;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .author-credit a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>SYD051 - Isolation Plan</h1>
+    </header>
+
+    <div class="container">
+        <div class="author-credit">
+            App Author: <a href="https://phonetool.amazon.com/users/jjgalang" target="_blank">Jerald Galang</a>
+        </div>
+        <div class="content-wrapper">
+            <div class="floor-plan-container">
+                <div class="loading-indicator" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <div>Loading Floor Plan...</div>
+                </div>
+                
+                <img 
+                    src="Isolation project.png" 
+                    class="floor-plan-image" 
+                    id="floorPlanImage"
+                    alt="Isolation Project Floor Plan"
+                    onload="hideLoading()">
+                </img>
+                <!-- Location dots for each area -->
+                <div id="electrical-dot1" class="location-dot" style="color: #0073bb; top: 27%; left: 10%;"></div>
+                <div id="electrical-dot2" class="location-dot" style="color: #0073bb; top: 27%; left: 20%;"></div>
+                <div id="electrical-dot3" class="location-dot" style="color: #0073bb; top: 27%; left: 32%;"></div>
+                <div id="electrical-dot4" class="location-dot" style="color: #0073bb; top: 27%; left: 55%;"></div>
+                <div id="electrical-dot5" class="location-dot" style="color: #0073bb; top: 27%; left: 62%;"></div>
+                <div id="electrical-dot6" class="location-dot" style="color: #0073bb; top: 27%; left: 77%;"></div>
+                <div id="electrical-dot7" class="location-dot" style="color: #0073bb; top: 27%; left: 87%;"></div>
+                <div id="generator-dot" class="location-dot" style="color: #ff9900; top: 12%; left: 15%;"></div>
+                <div id="generator-dot2" class="location-dot" style="color: #ff9900; top: 12%; left: 85%;"></div>
+                <div id="data-hall-dot1" class="location-dot" style="color: #1d8102; top: 50%; left: 25%;"></div>
+                <div id="data-hall-dot2" class="location-dot" style="color: #1d8102; top: 50%; left: 75%;"></div>
+                <div id="hv-room-dot1" class="location-dot" style="color: #d13212; top: 27%; left: 95.7%;"></div>
+                <div id="battery-room-dot1" class="location-dot" style="color: #7d0c82; top: 27%; left: 92%;"></div>
+                <div id="battery-room-dot2" class="location-dot" style="color: #7d0c82; top: 27%; left: 4%;"></div>
+                <div id="battery-room-dot3" class="location-dot" style="color: #7d0c82; top: 27%; left: 25.5%;"></div>
+                <div id="battery-room-dot4" class="location-dot" style="color: #7d0c82; top: 27%; left: 39.5%;"></div>
+                <div id="battery-room-dot5" class="location-dot" style="color: #7d0c82; top: 27%; left: 68%;"></div>
+                <div id="battery-room-dot6" class="location-dot" style="color: #7d0c82; top: 27%; left: 71%;"></div>
+
+                <div id="valve-dot1" class="location-dot" style="color: #2e73b8; top: 4%; left: 35.7%;"></div>
+                <div id="valve-dot2" class="location-dot" style="color: #2e73b8; top: 4%; left: 60%;"></div>
+                <div id="fire-room-dot1" class="location-dot" style="color: #cf1f1f; top: 70%; left: 5%;"></div>
+                <div id="iw-supply-dot1" class="location-dot" style="color: #2e73b8; top: 83%; left: 2%;"></div>
+                
+                <!-- Hover zones positioned exactly at dot locations -->
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 10%;"></div>
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 20%;"></div>
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 32%;"></div>
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 55%;"></div>
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 62%;"></div>
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 77%;"></div>
+                <div class="hover-zone electrical-zone" style="top: 27%; left: 87%;"></div>
+                <div class="hover-zone generator-zone" style="top: 12%; left: 15%;"></div>
+                <div class="hover-zone generator-zone" style="top: 12%; left: 85%;"></div>
+                <div class="hover-zone data-hall-zone" style="top: 50%; left: 25%;"></div>
+                <div class="hover-zone data-hall-zone" style="top: 50%; left: 75%;"></div>
+                <div class="hover-zone hv-zone" style="top: 27%; left: 95.7%;"></div>
+                <div class="hover-zone battery-zone" style="top: 27%; left: 4%;"></div>
+                <div class="hover-zone battery-zone" style="top: 27%; left: 25.5%;"></div>
+                <div class="hover-zone battery-zone" style="top: 27%; left: 39.5%;"></div>
+                <div class="hover-zone battery-zone" style="top: 27%; left: 68%;"></div>
+                <div class="hover-zone battery-zone" style="top: 27%; left: 71%;"></div>
+                <div class="hover-zone battery-zone" style="top: 27%; left: 92%;"></div>
+
+                <div class="hover-zone iw-zone" style="top: 4%; left: 35.7%;"></div>
+                <div class="hover-zone iw-zone" style="top: 4%; left: 60%;"></div>
+                <div class="hover-zone fire-zone" style="top: 70%; left: 5%;"></div>
+                <div class="hover-zone iw-zone" style="top: 83%; left: 2%;"></div>
+            </div>
+            
+            <div class="legend-container">
+                <h2 class="legend-title">Floor Plan Legend</h2>
+                
+                <div class="legend-item" id="electrical-room-legend">
+                    <div class="legend-color electrical-color"></div>
+                    <div class="legend-text">Electrical Room</div>
+                </div>
+                
+                <div class="legend-item" id="generator-hall-legend">
+                    <div class="legend-color generator-color"></div>
+                    <div class="legend-text">Generator Hall</div>
+                </div>
+                
+                <div class="legend-item" id="data-hall-legend">
+                    <div class="legend-color data-hall-color"></div>
+                    <div class="legend-text">Data Hall</div>
+                </div>
+                
+                <div class="legend-item" id="hv-room-legend">
+                    <div class="legend-color hv-color"></div>
+                    <div class="legend-text">HV Room</div>
+                </div>
+                
+                <div class="legend-item" id="battery-room-legend">
+                    <div class="legend-color battery-color"></div>
+                    <div class="legend-text">Battery Room</div>
+                </div>
+                
+                <div class="legend-item" id="busduct-legend">
+                    <div class="legend-color busduct-color"></div>
+                    <div class="legend-text">Catcher busduct TOB isolation</div>
+                </div>
+                
+
+                <div class="legend-item" id="valve-legend">
+                    <div class="legend-color valve-color"></div>
+                    <div class="legend-text">Pre-Action Valve isolation</div>
+                </div>
+                
+                <div class="legend-item" id="fire-room-legend">
+                    <div class="legend-color fire-color"></div>
+                    <div class="legend-text">Fire Riser Room</div>
+                </div>
+                
+                <div class="legend-item" id="iw-supply-legend">
+                    <div class="legend-color iw-color"></div>
+                    <div class="legend-text">IW main supply A & B</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>SYD051 Isolation Plan Overview</h3>
+            <p>This interactive overlay displays critical isolation points for SYD051's electrical, water, and fire suppression systems. Each color-coded location provides direct access to relevant Emergency Operating Procedures (EOPs) for rapid emergency response and system isolation protocols.</p>
+        </div>
+    </div>
+    
+    <!-- Modal for Generator Hall links -->
+    <div id="generatorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Generator Hall Documentation</h3>
+            </div>
+            <span class="close" id="generatorClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/667177/publication" target="_blank">EOP SYD51/ Primary Generator Hall 1 & Generator Hall 2 Primary Fuel Supply Failure</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/29137/publication" target="_blank">SYD51/Generator Hall/Generator/Manual Operation of Generator Fuel System</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28010/publication" target="_blank">SYD51/GEN HALL/Generators/Generator Failure</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28276/publication" target="_blank">SYD51/Generator Hall/Generator/Diesel Spill</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/40781/publication" target="_blank">SYD51/Diesel Fuel System/Diesel Spill Incident Process</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28278/publication" target="_blank">SYD51/Generator Hall/Generator/Latching Alarm Reset</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/89893/publication" target="_blank">SYD51/SOP/Diesel Fuel Transfer Procedures</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/610386/publication" target="_blank">SYD51_EOP_Manual_Operation_of_Generator_Fuel_System with No HMI</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Modal for Electrical Room links -->
+    <div id="electricalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Electrical Room Documentation</h3>
+            </div>
+            <span class="close" id="electricalClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/64697/publication" target="_blank">SYD51/EOP/AMCOP/Manual Transfer to Generator_V1.0</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/56190/publication" target="_blank">SYD51/Electrical Room X/ATS-A Main Circuit Breaker Utility Tripped</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28015/publication" target="_blank">SYD51/Electrical Room X/ATS-B/ATS-B Manual Transfer To Source 2</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/75630/publication" target="_blank">SYD51 - EOP AMCOP PLC HMI FAILURE</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28906/publication" target="_blank">SYD/ATS A Fail To Transfer v1.0</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/56190/publication" target="_blank">SYD51/Electrical Room X/ATS-A Main Circuit Breaker Utility Tripped</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/93406/publication" target="_blank">SYD51/EOP/Room Overheated and must be manually purged</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/27969/publication" target="_blank">SYD51/ER/UPS/Schneider UPS Failure</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/614059/publication" target="_blank">SYD51_EOP_Mechanical_ATS_Fails_To_Transfer_to_Catcher</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Modal for HV Room links -->
+    <div id="hvModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>HV Room Documentation</h3>
+            </div>
+            <span class="close" id="hvClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28280/publication" target="_blank">SYD51/HV Room/HV/11KV Failure</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28008/publication" target="_blank">SYD51/ELEC/TX/HV TX Breaker Tripped</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Modal for Battery Room links -->
+    <div id="batteryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Battery Room Documentation</h3>
+            </div>
+            <span class="close" id="batteryClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28277/publication" target="_blank">SYD51/UPS Battery Room/UPS Batteries/Battery String Isolation</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Modal for Busduct links -->
+    <div id="busductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Catcher Busduct Documentation</h3>
+            </div>
+            <span class="close" id="busductClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/28011/publication" target="_blank">SYD51/Red Corridor/Critical Bus Duct/Critical Bus Duct Tap Off Box Isolation</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    
+    <!-- Modal for Valve links -->
+    <div id="valveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pre-Action Valve Documentation</h3>
+            </div>
+            <span class="close" id="valveClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/29139/publication" target="_blank">SYD51/Yellow Zone Corridor/Pre-Action Valve Set/Isolating Sprinkler System</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Modal for Fire Riser Room links -->
+    <div id="fireModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Fire Riser Room Documentation</h3>
+            </div>
+            <span class="close" id="fireClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/66376/publication" target="_blank">SYD53/EOP/Fire System/Emergency Isolation of the Sprinkler and Pre-Action System</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Modal for IW Supply links -->
+    <div id="iwModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>IW Main Supply Documentation</h3>
+            </div>
+            <span class="close" id="iwClose">&times;</span>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/635924/draft" target="_blank">SYD51 Utility Water Loss</a>
+                </li>
+                <li class="link-item">
+                    <a href="https://policy.a2z.com/docs/29139/publication" target="_blank">SYD51/Yellow Zone Corridor/Pre-Action Valve Set/Isolating Sprinkler System</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Execute this immediately to hide loading indicator
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        });
+        
+        function hideLoading() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        // Add highlight effect when hovering legend items
+        document.addEventListener('DOMContentLoaded', function() {
+            // Location dot functionality
+            const locationDots = {
+                'electrical-room-legend': ['electrical-dot1', 'electrical-dot2', 'electrical-dot3', 'electrical-dot4', 'electrical-dot5', 'electrical-dot6', 'electrical-dot7'],
+                'generator-hall-legend': ['generator-dot', 'generator-dot2'],
+                'data-hall-legend': ['data-hall-dot1', 'data-hall-dot2'],
+                'hv-room-legend': ['hv-room-dot1'],
+                'battery-room-legend': ['battery-room-dot1', 'battery-room-dot2', 'battery-room-dot3', 'battery-room-dot4', 'battery-room-dot5', 'battery-room-dot6'],
+                'busduct-legend': [],
+                'valve-legend': ['valve-dot1', 'valve-dot2'],
+                'fire-room-legend': ['fire-room-dot1'],
+                'valve-legend': [],
+                'iw-supply-legend': ['iw-supply-dot1', 'valve-dot1', 'valve-dot2']
+            };
+            
+            // Individual hover zone to single dot mapping
+            const zoneToSingleDot = {
+                0: 'electrical-dot1', 1: 'electrical-dot2', 2: 'electrical-dot3', 3: 'electrical-dot4', 4: 'electrical-dot5', 5: 'electrical-dot6', 6: 'electrical-dot7',
+                7: 'generator-dot', 8: 'generator-dot2',
+                9: 'data-hall-dot1', 10: 'data-hall-dot2',
+                11: 'hv-room-dot1',
+                12: 'battery-room-dot2', 13: 'battery-room-dot3', 14: 'battery-room-dot4', 15: 'battery-room-dot5', 16: 'battery-room-dot6', 17: 'battery-room-dot1',
+                18: 'valve-dot1', 19: 'valve-dot2',
+                20: 'fire-room-dot1',
+                21: 'iw-supply-dot1'
+            };
+            
+            // Dot to modal mapping
+            const dotToModal = {
+                'electrical-dot1': 'electricalModal', 'electrical-dot2': 'electricalModal', 'electrical-dot3': 'electricalModal',
+                'electrical-dot4': 'electricalModal', 'electrical-dot5': 'electricalModal', 'electrical-dot6': 'electricalModal', 'electrical-dot7': 'electricalModal',
+                'generator-dot': 'generatorModal', 'generator-dot2': 'generatorModal',
+                'data-hall-dot1': null, 'data-hall-dot2': null,
+                'hv-room-dot1': 'hvModal',
+                'battery-room-dot1': 'batteryModal', 'battery-room-dot2': 'batteryModal', 'battery-room-dot3': 'batteryModal',
+                'battery-room-dot4': 'batteryModal', 'battery-room-dot5': 'batteryModal', 'battery-room-dot6': 'batteryModal',
+
+                'valve-dot1': 'iwModal', 'valve-dot2': 'iwModal',
+                'fire-room-dot1': 'fireModal',
+                'iw-supply-dot1': 'iwModal'
+            };
+            
+
+            
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f7f9fa';
+                    this.style.transform = 'scale(1.03)';
+                    
+                    // Show corresponding dots if exist
+                    const dotIds = locationDots[this.id];
+                    if (dotIds) {
+                        dotIds.forEach(dotId => {
+                            const dot = document.getElementById(dotId);
+                            if (dot) dot.style.display = 'block';
+                        });
+                    }
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                    this.style.transform = '';
+                    
+                    // Hide corresponding dots if exist
+                    const dotIds = locationDots[this.id];
+                    if (dotIds) {
+                        dotIds.forEach(dotId => {
+                            const dot = document.getElementById(dotId);
+                            if (dot) dot.style.display = 'none';
+                        });
+                    }
+                });
+            });
+            
+            // Individual hover zone functionality
+            document.querySelectorAll('.hover-zone').forEach((zone, index) => {
+                zone.addEventListener('mouseenter', function() {
+                    const dotId = zoneToSingleDot[index];
+                    if (dotId) {
+                        const dot = document.getElementById(dotId);
+                        if (dot) {
+                            dot.style.display = 'block';
+                            dot.classList.add('glow');
+                        }
+                    }
+                });
+                
+                zone.addEventListener('mouseleave', function() {
+                    const dotId = zoneToSingleDot[index];
+                    if (dotId) {
+                        const dot = document.getElementById(dotId);
+                        if (dot) {
+                            dot.style.display = 'none';
+                            dot.classList.remove('glow');
+                        }
+                    }
+                });
+                
+                zone.addEventListener('click', function() {
+                    const dotId = zoneToSingleDot[index];
+                    if (dotId) {
+                        const modalId = dotToModal[dotId];
+                        if (modalId) {
+                            const modal = document.getElementById(modalId);
+                            if (modal) {
+                                modal.style.display = 'block';
+                                document.body.style.overflow = 'hidden';
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Dot click functionality
+            document.querySelectorAll('.location-dot').forEach(dot => {
+                dot.addEventListener('click', function() {
+                    const modalId = dotToModal[this.id];
+                    if (modalId) {
+                        const modal = document.getElementById(modalId);
+                        if (modal) {
+                            modal.style.display = 'block';
+                            document.body.style.overflow = 'hidden';
+                        }
+                    }
+                });
+            });
+            
+            // Modal functionality for all legend items
+            const modals = [
+                { id: 'generatorModal', legendId: 'generator-hall-legend', closeId: 'generatorClose' },
+                { id: 'electricalModal', legendId: 'electrical-room-legend', closeId: 'electricalClose' },
+                { id: 'hvModal', legendId: 'hv-room-legend', closeId: 'hvClose' },
+                { id: 'batteryModal', legendId: 'battery-room-legend', closeId: 'batteryClose' },
+                { id: 'busductModal', legendId: 'busduct-legend', closeId: 'busductClose' },
+
+
+                { id: 'valveModal', legendId: 'valve-legend', closeId: 'valveClose' },
+                { id: 'fireModal', legendId: 'fire-room-legend', closeId: 'fireClose' },
+                { id: 'iwModal', legendId: 'iw-supply-legend', closeId: 'iwClose' }
+            ];
+            
+            // Set up event listeners for all modals
+            modals.forEach(modal => {
+                const modalElement = document.getElementById(modal.id);
+                const legendElement = document.getElementById(modal.legendId);
+                const closeElement = document.getElementById(modal.closeId);
+                
+                // Open modal when clicking on legend item
+                legendElement.addEventListener('click', function() {
+                    modalElement.style.display = 'block';
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+                });
+                
+                // Close modal when clicking on X
+                closeElement.addEventListener('click', function() {
+                    modalElement.style.display = 'none';
+                    document.body.style.overflow = '';
+                });
+                
+                // Close modal when clicking outside of it
+                window.addEventListener('click', function(event) {
+                    if (event.target == modalElement) {
+                        modalElement.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+            
+            // Close any open modal with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    modals.forEach(modal => {
+                        const modalElement = document.getElementById(modal.id);
+                        if (modalElement.style.display === 'block') {
+                            modalElement.style.display = 'none';
+                            document.body.style.overflow = '';
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
